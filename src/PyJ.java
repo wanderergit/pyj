@@ -136,8 +136,52 @@ class Lexer {
             return new Token<Float>(Constants.TT_FLOAT, Float.parseFloat(numStr.toString()));
         }
     }
-
 }
+
+/*
+    NODES
+ */
+
+class NumberNode {
+    Token token;
+    public NumberNode(Token t){
+        this.token = t;
+    }
+
+    @Override
+    public String toString() {
+        return "NumberNode{" +
+                "token=" + token +
+                '}';
+    }
+}
+
+class BinOpNode {
+    NumberNode leftNode;
+    NumberNode rightNode;
+    Token opToken;
+
+    public BinOpNode(NumberNode leftNode, Token opToken, NumberNode rightNode){
+        this.leftNode = leftNode;
+        this.rightNode = rightNode;
+        this.opToken = opToken;
+    }
+
+    @Override
+    public String toString() {
+        return "BinOpNode{" +
+                "leftNode=" + leftNode +
+                ", rightNode=" + rightNode +
+                ", opToken=" + opToken +
+                '}';
+    }
+}
+
+/*
+    PARSER
+ */
+
+
 
 public class PyJ {
     public static LinkedList<Token> run(String text) throws Exception{
