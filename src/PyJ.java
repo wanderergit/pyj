@@ -25,6 +25,43 @@ class IllegalCharException extends Exception {
     }
 }
 
+
+/*
+    POSITION
+ */
+
+class Position {
+    int idx, ln, col;
+
+    Position(int idx, int ln, int col){
+        this.idx = idx;
+        this.ln = ln;
+        this.col = col;
+    }
+
+    public void advance(char currentChar){
+        this.idx += 1;
+        this.col += 1;
+
+        if(currentChar == '\n'){
+            this.ln += 1;
+            this.col = 0;
+        }
+    }
+
+    public Position copy(){
+        return new Position(this.idx, this.ln, this.col);
+    }
+
+    @Override
+    public String toString() {
+        return "index:" + idx +
+                ", line:" + ln +
+                ", col:" + col;
+    }
+}
+
+
 /*
     TOKENS
  */
@@ -62,18 +99,18 @@ class Token<T> {
 
 class Lexer {
     String text;
-    int pos;
+    Position pos;
     char currentChar;
 
     public Lexer(String text) {
         this.text = text;
-        this.pos = -1;
+        this.pos = new Position(-1, 0, -1);
         advance();
     }
 
     public void advance() {
-        this.pos += 1;
-        currentChar = this.pos < this.text.length() ? this.text.charAt(pos) : '\0';
+        this.pos.advance(currentChar);
+        currentChar = this.pos.idx < this.text.length() ? this.text.charAt(this.pos.idx) : '\0';
     }
 
     public LinkedList<Token> makeTokens() throws IllegalCharException {
@@ -108,7 +145,7 @@ class Lexer {
                 // return error
                 char ch = this.currentChar;
                 advance();
-                throw new IllegalCharException("Illegal Character " + "'" + ch + "'");
+                throw new IllegalCharException("Illegal Character " + "'" + ch + "' at position " + pos.toString());
             }
         }
 
