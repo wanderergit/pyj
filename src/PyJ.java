@@ -168,18 +168,20 @@ class Lexer {
         }
 
         if(dotCount == 0){
-            return new Token<Integer>(Constants.TT_INT, Integer.parseInt(numStr.toString()));
+            return new Token<>(Constants.TT_INT, Integer.parseInt(numStr.toString()));
         } else {
-            return new Token<Float>(Constants.TT_FLOAT, Float.parseFloat(numStr.toString()));
+            return new Token<>(Constants.TT_FLOAT, Float.parseFloat(numStr.toString()));
         }
     }
 }
 
-/*
-    NODES
+/**
+ * NODES
  */
 
-class NumberNode {
+class Node {}
+
+class NumberNode extends Node{
     Token<?> token;
     public NumberNode(Token<?> t){
         this.token = t;
@@ -191,7 +193,7 @@ class NumberNode {
     }
 }
 
-class BinOpNode<T, U> {
+class BinOpNode<T, U> extends Node{
     T leftNode;
     U rightNode;
     Token<?> opToken;
@@ -205,14 +207,14 @@ class BinOpNode<T, U> {
     @Override
     public String toString() {
         return "(" + leftNode +
-                ", " + rightNode +
                 ", " + opToken +
+                ", " + rightNode +
                 ')';
     }
 }
 
-/*
-    PARSER
+/**
+ * PARSER
  */
 
 class Parser {
@@ -234,7 +236,7 @@ class Parser {
         return currToken;
     }
 
-    public NumberNode factor(){
+    public Node factor(){
         Token<?> tok = this.currToken;
         if(tok.type.equals(Constants.TT_INT) || tok.type.equals(Constants.TT_FLOAT)){
             advance();
@@ -243,40 +245,39 @@ class Parser {
         return null;
     }
 
-    public BinOpNode<?, ?> term(){
-        NumberNode left = factor();
-        BinOpNode<?, ?> res = null;
+    public Node term(){
+        Node left = factor();
 
         while(this.currToken.type.equals(Constants.TT_MUL) || this.currToken.type.equals(Constants.TT_DIV)){
            Token<?> opToken = currToken;
            advance();
-           NumberNode right = factor();
-           res = new BinOpNode<>(left, opToken, right);
+           Node right = factor();
+           left = new BinOpNode<>(left, opToken, right);
         }
-        return res;
+        return left;
     }
 
-    public BinOpNode<?, ?> expression(){
-        BinOpNode<?, ?> left = term();
-        BinOpNode<?, ?> res = null;
+    public Node expression(){
+        Node left = term();
 
         while(this.currToken.type.equals(Constants.TT_PLUS) || this.currToken.type.equals(Constants.TT_MINUS)){
             Token<?> opToken = currToken;
             advance();
-            BinOpNode<? ,?> right = term();
-            res = new BinOpNode<>(left, opToken, right);
+            Node right = term();
+            left = new BinOpNode<>(left, opToken, right);
         }
-        return res;
+
+        return left;
     }
 
-    public BinOpNode<?, ?> parse(){
+    public Node parse(){
         return expression();
     }
 
 }
 
 public class PyJ {
-    public static BinOpNode<?, ?> run(String text) throws Exception{
+    public static Node run(String text) throws Exception{
         // Generate tokens
         Lexer lexer = new Lexer(text);
         LinkedList<Token<?>> tokens = lexer.makeTokens();

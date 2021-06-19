@@ -8,7 +8,7 @@ public class Shell {
             System.out.print("pyj > ");
             String text = sc.nextLine();
 
-            BinOpNode<?, ?> res = null;
+            Node res = null;
             try {
                 res = PyJ.run(text);
             } catch(Exception e){
