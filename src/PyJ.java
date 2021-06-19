@@ -113,8 +113,8 @@ class Lexer {
         currentChar = this.pos.idx < this.text.length() ? this.text.charAt(this.pos.idx) : '\0';
     }
 
-    public LinkedList<Token> makeTokens() throws IllegalCharException {
-        LinkedList<Token> tokens = new LinkedList<>();
+    public LinkedList<Token<?>> makeTokens() throws IllegalCharException {
+        LinkedList<Token<?>> tokens = new LinkedList<>();
 
         while(this.currentChar != '\0'){
             if(this.currentChar == ' ' || this.currentChar == '\t')
@@ -124,22 +124,22 @@ class Lexer {
                 advance();
             }
             else if(this.currentChar == '+'){
-                tokens.add(new Token(Constants.TT_PLUS));
+                tokens.add(new Token<>(Constants.TT_PLUS));
                 advance();
             } else if(this.currentChar == '-'){
-                tokens.add(new Token(Constants.TT_MINUS));
+                tokens.add(new Token<>(Constants.TT_MINUS));
                 advance();
             } else if(this.currentChar == '*'){
-                tokens.add(new Token(Constants.TT_MUL));
+                tokens.add(new Token<>(Constants.TT_MUL));
                 advance();
             } else if(this.currentChar == '/'){
-                tokens.add(new Token(Constants.TT_DIV));
+                tokens.add(new Token<>(Constants.TT_DIV));
                 advance();
             } else if(this.currentChar == '('){
-                tokens.add(new Token(Constants.TT_LPAREN));
+                tokens.add(new Token<>(Constants.TT_LPAREN));
                 advance();
             } else if(this.currentChar == ')'){
-                tokens.add(new Token(Constants.TT_RPAREN));
+                tokens.add(new Token<>(Constants.TT_RPAREN));
                 advance();
             } else {
                 // return error
@@ -152,8 +152,8 @@ class Lexer {
         return tokens;
     }
 
-    public Token makeNumber(){
-        StringBuffer numStr = new StringBuffer("");
+    public Token<?> makeNumber(){
+        StringBuilder numStr = new StringBuilder("");
         int dotCount = 0;
 
         while(this.currentChar != '\0' && (Character.isDigit(this.currentChar) || this.currentChar == '.')){
@@ -180,25 +180,23 @@ class Lexer {
  */
 
 class NumberNode {
-    Token token;
-    public NumberNode(Token t){
+    Token<?> token;
+    public NumberNode(Token<?> t){
         this.token = t;
     }
 
     @Override
     public String toString() {
-        return "NumberNode{" +
-                "token=" + token +
-                '}';
+        return "" + token;
     }
 }
 
-class BinOpNode {
-    NumberNode leftNode;
-    NumberNode rightNode;
-    Token opToken;
+class BinOpNode<T, U> {
+    T leftNode;
+    U rightNode;
+    Token<?> opToken;
 
-    public BinOpNode(NumberNode leftNode, Token opToken, NumberNode rightNode){
+    public BinOpNode(T leftNode, Token<?> opToken, U rightNode){
         this.leftNode = leftNode;
         this.rightNode = rightNode;
         this.opToken = opToken;
@@ -206,11 +204,10 @@ class BinOpNode {
 
     @Override
     public String toString() {
-        return "BinOpNode{" +
-                "leftNode=" + leftNode +
-                ", rightNode=" + rightNode +
-                ", opToken=" + opToken +
-                '}';
+        return "(" + leftNode +
+                ", " + rightNode +
+                ", " + opToken +
+                ')';
     }
 }
 
@@ -218,12 +215,74 @@ class BinOpNode {
     PARSER
  */
 
+class Parser {
+    LinkedList<Token<?>> tokens;
+    int tokIdx;
+    Token<?> currToken;
 
+    Parser(LinkedList<Token<?>> tokens){
+        this.tokens = tokens;
+        this.tokIdx = 0;
+        currToken = tokens.get(0);
+    }
+
+    public Token<?> advance(){
+        this.tokIdx += 1;
+        if(tokIdx < tokens.size()){
+            currToken = tokens.get(tokIdx);
+        }
+        return currToken;
+    }
+
+    public NumberNode factor(){
+        Token<?> tok = this.currToken;
+        if(tok.type.equals(Constants.TT_INT) || tok.type.equals(Constants.TT_FLOAT)){
+            advance();
+            return new NumberNode(tok);
+        }
+        return null;
+    }
+
+    public BinOpNode<?, ?> term(){
+        NumberNode left = factor();
+        BinOpNode<?, ?> res = null;
+
+        while(this.currToken.type.equals(Constants.TT_MUL) || this.currToken.type.equals(Constants.TT_DIV)){
+           Token<?> opToken = currToken;
+           advance();
+           NumberNode right = factor();
+           res = new BinOpNode<>(left, opToken, right);
+        }
+        return res;
+    }
+
+    public BinOpNode<?, ?> expression(){
+        BinOpNode<?, ?> left = term();
+        BinOpNode<?, ?> res = null;
+
+        while(this.currToken.type.equals(Constants.TT_PLUS) || this.currToken.type.equals(Constants.TT_MINUS)){
+            Token<?> opToken = currToken;
+            advance();
+            BinOpNode<? ,?> right = term();
+            res = new BinOpNode<>(left, opToken, right);
+        }
+        return res;
+    }
+
+    public BinOpNode<?, ?> parse(){
+        return expression();
+    }
+
+}
 
 public class PyJ {
-    public static LinkedList<Token> run(String text) throws Exception{
+    public static BinOpNode<?, ?> run(String text) throws Exception{
+        // Generate tokens
         Lexer lexer = new Lexer(text);
-        LinkedList<Token> tokens = lexer.makeTokens();
-        return tokens;
+        LinkedList<Token<?>> tokens = lexer.makeTokens();
+
+        // Generate Abstract Syntax Tree
+        Parser parser = new Parser(tokens);
+        return parser.parse();
     }
 }

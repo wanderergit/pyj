@@ -1,4 +1,3 @@
-import java.util.LinkedList;
 import java.util.Scanner;
 
 public class Shell {
@@ -9,11 +8,11 @@ public class Shell {
             System.out.print("pyj > ");
             String text = sc.nextLine();
 
-            LinkedList<Token> res = null;
+            BinOpNode<?, ?> res = null;
             try {
                 res = PyJ.run(text);
             } catch(Exception e){
-                System.out.println(e.toString());
+                e.printStackTrace();
             }
             if(res != null) {
                 System.out.println(res.toString());
